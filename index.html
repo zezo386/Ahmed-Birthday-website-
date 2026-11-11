@@ -105,12 +105,13 @@ body{margin:0;height:100%;overflow:hidden;background:linear-gradient(165deg,var(
 <script>
 // ===== EDIT ME =====
 // 1) Put your pictures in a folder called "photos" next to this file.
-// 2) Name each picture after its event plus a number: "Beach trip1.jpg", "Beach trip2.jpg"...
+// 2) Name each picture after its event plus a number: "Beach trip1.jpeg", "Beach trip2.jpeg"...
 //    Same name (ignoring the number) = one rapid-fire burst, and the name becomes the title.
 // 3) List every file name below (browsers can't read a folder on their own). If the list is empty,
 //    the page tries to read the folder automatically (works on some web servers); otherwise it shows a demo.
 var PHOTO_FILES=["Abo ghaly","Adapt season two","American corner","Asr el baraneet","Bibleotecha","Equinox forgien","Fluke","Geothe","Hanin birthday","Hardware","Pizza","Projecta planning","Projecta","Pyramids","Techne","Train","Travel","Tv"];
 var ORDER=[]; // optional: event names in lower case, in the order you want, e.g. ["beach trip","birthday dinner"]
+var PHOTO_EXT=".jpeg"; // extension used when a name above has none
 var RAPID=330; // milliseconds between rapid-fire photos
 var EMO=["📸","😂","🌅","🎶","☕","💛"];
 // =====================
@@ -162,16 +163,21 @@ $('#ls').onpointerdown=function(){if(ready!==1)return;ready=2;document.querySele
 $('#cn').onclick=startF;
 /* photos */
 var G=[],tk=0;
+function ext(f){return /\.[a-z0-9]{2,5}$/i.test(f)?f:f+PHOTO_EXT}
 function load(cb){if(PHOTO_FILES.length||location.protocol==='file:')return cb();
- fetch('photos/').then(function(r){return r.text()}).then(function(t){var re=/href="([^"?#]+\.(?:jpe?g|png|webp|gif|avif))"/gi,m;while(m=re.exec(t))PHOTO_FILES.push(decodeURIComponent(m[1].split('/').pop()))}).catch(function(){}).then(cb)}
-function build(){var fl=PHOTO_FILES.slice().sort(new Intl.Collator(undefined,{numeric:true}).compare),m={};G=[];
+ fetch('photos/').then(function(r){return r.text()}).then(function(t){var re=/href="([^"?#]+\.(?:jpeg|jpg|png|webp|gif|avif))"/gi,m;while(m=re.exec(t))PHOTO_FILES.push(decodeURIComponent(m[1].split('/').pop()))}).catch(function(){}).then(cb)}
+function build(){var fl=PHOTO_FILES.map(ext).sort(new Intl.Collator(undefined,{numeric:true}).compare),m={};G=[];
  fl.forEach(function(f){var b=f.replace(/\.[^.]+$/,''),n=b.replace(/[\s_-]*\d+$/,'').trim()||b,k=n.toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
   if(!m[k]){m[k]={key:k,name:n.replace(/[_-]+/g,' ').replace(/^./,function(c){return c.toUpperCase()}),src:[]};G.push(m[k])}
   var u='photos/'+encodeURIComponent(f);m[k].src.push(u);new Image().src=u});
  if(ORDER.length)G.sort(function(a,b){var i=ORDER.indexOf(a.key),j=ORDER.indexOf(b.key);return(i<0?99:i)-(j<0?99:j)});
  if(!G.length)G=[['Summer nights',5],['Road trip',6],['Game day',4]].map(function(d){var s=[];for(var i=0;i<d[1];i++)s.push(null);return{name:d[0],src:s}})}
 function mk(src,cap,h){var p=document.createElement('div'),m;p.className='pol';
- if(src){m=new Image();m.alt='';m.decoding='async';m.src=src;m.onerror=function(){var d=document.createElement('div');d.className='ph';d.style.setProperty('--h',h);d.textContent='📸';m.replaceWith(d)}}
+ if(src){m=new Image();m.alt='';m.decoding='async';
+  m.onerror=function(){
+   if(/\.jpeg$/i.test(m.src)&&!m.dataset.r){m.dataset.r=1;m.src=m.src.replace(/\.jpeg$/i,'.jpg');return}
+   var d=document.createElement('div');d.className='ph';d.style.setProperty('--h',h);d.textContent='📸';m.replaceWith(d)};
+  m.src=src}
  else{m=document.createElement('div');m.className='ph';m.style.setProperty('--h',h);m.textContent=EMO[(h/20|0)%6]}
  p.appendChild(m);var c=document.createElement('p');c.textContent=cap;p.appendChild(c);return p}
 function rnd(a,b){return a+Math.random()*(b-a)}
